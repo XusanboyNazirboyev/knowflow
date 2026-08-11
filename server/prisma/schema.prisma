@@ -1,0 +1,109 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum DocumentStatus {
+  PENDING
+  PROCESSING
+  READY
+  FAILED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  fullName  String
+  createdAt DateTime @default(now())
+
+  memberships WorkspaceMember[]
+
+  @@map("users")
+}
+
+model Workspace {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+
+  memberships   WorkspaceMember[]
+  documents     Document[]
+  conversations Conversation[]
+
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id       String        @id @default(uuid())
+  role     WorkspaceRole @default(MEMBER)
+  joinedAt DateTime      @default(now())
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId String
+
+  @@unique([userId, workspaceId])
+  @@map("workspace_members")
+}
+
+model Document {
+  id         String         @id @default(uuid())
+  fileName   String
+  fileSize   Int
+  mimeType   String
+  storageKey String
+  status     DocumentStatus @default(PENDING)
+  createdAt  DateTime       @default(now())
+
+  workspace   Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId String
+  chunks      DocumentChunk[]
+
+  @@map("documents")
+}
+
+model DocumentChunk {
+  id         String                       @id @default(uuid())
+  content    String
+  chunkIndex Int
+  embedding  Unsupported("vector(1536)")?
+  document   Document                     @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  documentId String
+
+  @@map("document_chunks")
+}
+
+model Conversation {
+  id          String    @id @default(uuid())
+  title       String?
+  createdAt    DateTime  @default(now())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId String
+  messages    Message[]
+
+  @@map("conversations")
+}
+
+model Message {
+  id String @id @default(uuid())
+
+  role           String
+  content        String
+  createdAt       DateTime      @default(now())
+  conversation   Conversation? @relation(fields: [conversationId], references: [id])
+  conversationId String
+
+  @@map("messages")
+}

@@ -1,0 +1,12 @@
+# Har ikkala papka uchun ehtiyot chorasi (ular allaqachon o'zining .gitignore'iga ega)
+**/node_modules/
+**/dist/
+**/.env
+!**/.env.example
+
+# OS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
