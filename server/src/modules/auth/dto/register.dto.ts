@@ -1,16 +1,32 @@
-import { IsEmail, IsNotEmpty, IsString, IsStrongPassword, MinLength } from 'class-validator'
+import {
+  IsEmail,
+  IsString,
+  MinLength,
+  IsStrongPassword,
+  IsOptional,
+} from 'class-validator';
+
+
 
 export class RegisterDto {
-
-  @IsEmail()
-  @IsNotEmpty()
-  email:string
-
-  @IsStrongPassword()
-  @MinLength(6)
-  password:string
+  @IsEmail({}, { message: "Email formati noto'g'ri" })
+  email: string;
 
   @IsString()
-  @MinLength(3)
-  fullName:string
+  @IsStrongPassword(
+    {},
+    {
+      message:
+        "Parol kamida 8 belgi, katta/kichik harf, raqam va maxsus belgidan iborat bo'lishi kerak",
+    },
+  )
+  password: string;
+
+  @IsString()
+  @IsOptional()
+  confirmPassword?: string;
+
+  @IsString()
+  @MinLength(2)
+  fullName: string;
 }

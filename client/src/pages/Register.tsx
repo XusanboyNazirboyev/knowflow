@@ -114,7 +114,6 @@ export const Register: React.FC = () => {
                 placeholder="••••••••"
                 leftIcon={<Lock className="h-4 w-4" />}
                 error={!!confirm && confirm !== password}
-                required
               />
             </div>
           </div>
