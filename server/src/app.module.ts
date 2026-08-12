@@ -5,6 +5,9 @@ import { AuthModule } from './modules/auth/auth.module';
 import { WorkspaceModule } from './modules/workspaces/workspaces.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { DocumentsModule } from './modules/documents/documents.module';
+import { ProcessingModule } from './modules/processing/processing.module';
+import { SearchModule } from './modules/search/search.module';
+import { ChatModule } from './modules/chat/chat.module';
 
 @Module({
   imports: [
@@ -16,8 +19,10 @@ import { DocumentsModule } from './modules/documents/documents.module';
     AuthModule,
     WorkspaceModule,
     StorageModule,
-    DocumentsModule
-
+    DocumentsModule,
+    ProcessingModule,
+    SearchModule,
+    ChatModule,
   ],
 })
 export class AppModule {}

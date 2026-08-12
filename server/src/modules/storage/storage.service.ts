@@ -50,4 +50,16 @@ export class StorageService implements OnModuleInit {
     });
     return getSignedUrl(this.client, command, { expiresIn: expiresInSeconds });
   }
+  async getFileBuffer(key: string): Promise<Buffer> {
+    const command = new GetObjectCommand({
+      Bucket: this.bucket,
+      Key: key,
+    });
+    const response = await this.client.send(command);
+    const chunks: Uint8Array[] = [];
+    for await (const chunk of response.Body as any) {
+      chunks.push(chunk);
+    }
+    return Buffer.concat(chunks);
+  }
 }

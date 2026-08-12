@@ -41,7 +41,7 @@ export class DocumentsController {
     return await this.docService.findAllForWorkspace(workspaceId);
   }
 
-  @Get('id')
+  @Get(':id')
   async finOne(
     @Param('workspaceId') workspaceId: string,
     @Param('id') id: string,
