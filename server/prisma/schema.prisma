@@ -12,6 +12,19 @@ enum WorkspaceRole {
   MEMBER
 }
 
+enum WorkspaceInvitationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CANCELLED
+}
+
+enum NotificationType {
+  WORKSPACE_INVITATION
+  INVITATION_ACCEPTED
+  MEMBER_REMOVED
+}
+
 enum DocumentStatus {
   PENDING
   PROCESSING
@@ -27,6 +40,8 @@ model User {
   createdAt DateTime @default(now())
 
   memberships WorkspaceMember[]
+  invitations WorkspaceInvitation[]
+  notifications ApplicationNotification[]
 
   @@map("users")
 }
@@ -38,10 +53,42 @@ model Workspace {
   createdAt DateTime @default(now())
 
   memberships   WorkspaceMember[]
+  invitations   WorkspaceInvitation[]
   documents     Document[]
   conversations Conversation[]
 
   @@map("workspaces")
+}
+
+model WorkspaceInvitation {
+  id          String                    @id @default(uuid())
+  email       String
+  role        WorkspaceRole             @default(MEMBER)
+  status      WorkspaceInvitationStatus @default(PENDING)
+  createdAt   DateTime                  @default(now())
+  respondedAt DateTime?
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId String
+  invitedBy   User      @relation(fields: [invitedById], references: [id], onDelete: Cascade)
+  invitedById String
+
+  @@unique([workspaceId, email])
+  @@map("workspace_invitations")
+}
+
+model ApplicationNotification {
+  id        String           @id @default(uuid())
+  type      NotificationType
+  content   String
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  @@index([userId, isRead, createdAt])
+  @@map("notifications")
 }
 
 model WorkspaceMember {

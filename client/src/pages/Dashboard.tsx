@@ -14,6 +14,8 @@ import {
 import { useDocuments } from "../hooks/useDocuments";
 import { useConversations } from "../hooks/useChat";
 import { useWorkspace } from "../store/workspaceContext";
+import { workspaceApi } from "../api/workspace.api";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card } from "../components/ui/Card";
 import StatusBadge from "../components//layout/StatusBadge";
 import EmptyState from "../components/layout/EmptyState";
@@ -42,13 +44,28 @@ const StatCard: React.FC<{
 );
 
 export const Dashboard: React.FC = () => {
-  const { activeWorkspace } = useWorkspace();
+  const { activeWorkspace, refreshWorkspaces } = useWorkspace();
+  const queryClient = useQueryClient();
   const { data: docsData } = useDocuments();
   const { data: conversations } = useConversations();
+  const { data: invitations } = useQuery({
+    queryKey: ["workspace-invitations"],
+    queryFn: workspaceApi.listMyInvitations,
+    refetchInterval: 5000,
+    refetchOnWindowFocus: true,
+  });
+  const respondToInvitation = useMutation({
+    mutationFn: ({ id, accept }: { id: string; accept: boolean }) =>
+      accept ? workspaceApi.acceptInvitation(id) : workspaceApi.declineInvitation(id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["workspace-invitations"] });
+      await refreshWorkspaces();
+    },
+  });
 
   const docs = docsData?.items ?? [];
-  const readyCount = docs.filter((d: any) => d.status === "ready").length;
-  const processingCount = docs.filter((d: any) => d.status === "processing").length;
+  const readyCount = docs.filter((d) => d.status === "READY").length;
+  const processingCount = docs.filter((d) => d.status === "PROCESSING" || d.status === "PENDING").length;
   const recentDocs = [...docs].sort((a, b) =>
     b.createdAt.localeCompare(a.createdAt)
   ).slice(0, 4);
@@ -64,6 +81,25 @@ export const Dashboard: React.FC = () => {
           Umumiy ko'rinish va so'nggi faollik
         </p>
       </div>
+
+      {(invitations?.length ?? 0) > 0 && (
+        <Card className="border-amber-500/30 bg-amber-500/5 p-4">
+          <p className="text-sm font-medium text-zinc-100">Workspace takliflari</p>
+          <div className="mt-3 space-y-3">
+            {invitations!.map((invitation) => (
+              <div key={invitation.id} className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm text-zinc-300">
+                  <span className="font-medium">{invitation.workspace.name}</span> workspace’iga {invitation.role} sifatida taklif qilindingiz.
+                </p>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" disabled={respondToInvitation.isPending} onClick={() => respondToInvitation.mutate({ id: invitation.id, accept: false })}>Rad etish</Button>
+                  <Button size="sm" isLoading={respondToInvitation.isPending} onClick={() => respondToInvitation.mutate({ id: invitation.id, accept: true })}>Qabul qilish</Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
@@ -85,7 +121,7 @@ export const Dashboard: React.FC = () => {
         <StatCard
           icon={<TrendingUp className="h-5 w-5" />}
           label="Indexed chunks"
-          value={docs.reduce((s: any, d: any) => s + d.chunkCount, 0)}
+          value="—"
         />
       </div>
 
@@ -113,7 +149,7 @@ export const Dashboard: React.FC = () => {
                 >
                   <FileText className="h-4 w-4 shrink-0 text-zinc-500" />
                   <span className="min-w-0 flex-1 truncate text-sm text-zinc-300">
-                    {doc.title}
+                    {doc.fileName}
                   </span>
                   <StatusBadge status={doc.status} />
                 </Link>
@@ -161,7 +197,7 @@ export const Dashboard: React.FC = () => {
                     {conv.title}
                   </span>
                   <span className="text-[10px] text-zinc-600">
-                    {relativeTime(conv.updatedAt)}
+                    {relativeTime(conv.createdAt)}
                   </span>
                 </Link>
               ))}

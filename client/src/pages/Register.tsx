@@ -31,7 +31,7 @@ export const Register: React.FC = () => {
     try {
       await register(email, password, name);
       navigate(ROUTES.DASHBOARD);
-    } catch (err) {
+    } catch {
       setError("Ro'yxatdan o'tishda xatolik yuz berdi");
     } finally {
       setLoading(false);

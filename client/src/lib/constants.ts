@@ -16,9 +16,9 @@ export const ROUTES = {
     SETTINGS: "/app/settings",
 } as const;
 
-export const DOCUMENT_TYPES = ["pdf", "docx", "txt", "md", "xlsx"] as const;
+export const DOCUMENT_TYPES = ["pdf", "txt", "md"] as const;
 
-export const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
+export const MAX_FILE_SIZE = 20 * 1024 * 1024; // backend bilan bir xil limit
 
 export const MEMBER_ROLES = ["owner", "admin", "member"] as const;
 

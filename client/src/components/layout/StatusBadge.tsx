@@ -11,17 +11,22 @@ const config: Record<
   DocumentStatus,
   { variant: "processing" | "ready" | "failed"; icon: React.ReactNode; label: string }
 > = {
-  processing: {
+  PENDING: {
+    variant: "processing",
+    icon: <Loader2 className="h-3 w-3 animate-spin" />,
+    label: "Kutilmoqda",
+  },
+  PROCESSING: {
     variant: "processing",
     icon: <Loader2 className="h-3 w-3 animate-spin" />,
     label: "Processing",
   },
-  ready: {
+  READY: {
     variant: "ready",
     icon: <Check className="h-3 w-3" />,
     label: "Ready",
   },
-  failed: {
+  FAILED: {
     variant: "failed",
     icon: <AlertCircle className="h-3 w-3" />,
     label: "Failed",

@@ -100,6 +100,13 @@ export interface UpdateMemberRolePayload {
     role: MemberRole;
 }
 
+export interface WorkspaceInvitation {
+    id: string;
+    role: MemberRole;
+    createdAt: string;
+    workspace: Pick<Workspace, "id" | "name" | "slug">;
+}
+
 export interface PaginatedResult<T> {
     items: T[];
     total: number;
@@ -111,26 +118,17 @@ export interface PaginatedResult<T> {
 // ============================================================
 // DOCUMENT
 // ============================================================
-export type DocumentFileType = "pdf" | "docx" | "txt" | "md" | "xlsx";
-export type DocumentStatus = "processing" | "ready" | "failed";
+export type DocumentFileType = "pdf" | "txt" | "md";
+export type DocumentStatus = "PENDING" | "PROCESSING" | "READY" | "FAILED";
 
 export interface Document {
     id: string;
     workspaceId: string;
-    title: string;
-    fileType: DocumentFileType;
+    fileName: string;
     fileSize: number;
+    mimeType: string;
     status: DocumentStatus;
-    /** Processing progress 0-100 (ready=100, failed=0) */
-    progress: number;
-    chunkCount: number;
-    category: string | null;
-    summary: string | null;
-    uploadedById: string;
-    uploadedByName: string | null;
-    errorMessage: string | null;
     createdAt: string;
-    updatedAt: string;
 }
 
 export interface UploadDocumentPayload {
@@ -167,11 +165,7 @@ export interface Conversation {
     id: string;
     workspaceId: string;
     title: string;
-    lastMessage: string | null;
-    messageCount: number;
-    pinned: boolean;
     createdAt: string;
-    updatedAt: string;
 }
 
 export type MessageRole = "user" | "assistant";
@@ -190,8 +184,8 @@ export interface Message {
     conversationId: string;
     role: MessageRole;
     content: string;
-    sources: MessageSource[];
-    latencyMs: number | null;
+    /** Sources faqat yangi AI javobida keladi; server tarixida saqlanmaydi. */
+    sources?: MessageSource[];
     createdAt: string;
 }
 
@@ -200,14 +194,14 @@ export interface CreateConversationPayload {
 }
 
 export interface SendMessagePayload {
-    conversationId: string;
+    conversationId?: string;
     content: string;
 }
 
 export interface ChatResponse {
     message: Message;
-    /** RAG retrieval topilgan chunklar — debugging/debug interfeys uchun */
-    retrievedChunks: number;
+    conversationId: string;
+    sources: MessageSource[];
 }
 
 // ============================================================
@@ -221,7 +215,7 @@ export type NotificationType =
 
 export interface Notification {
     id: string;
-    type: NotificationType;
+    type: "WORKSPACE_INVITATION" | "INVITATION_ACCEPTED" | "MEMBER_REMOVED";
     content: string;
     isRead: boolean;
     createdAt: string;

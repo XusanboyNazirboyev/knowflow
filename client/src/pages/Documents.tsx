@@ -14,7 +14,6 @@ import {
   useUploadDocument,
   useDeleteDocument,
 } from "../hooks/useDocuments";
-// import { useWorkspace } from "../store/workspaceContext";
 import DocumentCard from "../components/layout/DocumentCard";
 import EmptyState from "../components/layout/EmptyState";
 import { Button } from "../components/ui/Button";
@@ -24,8 +23,6 @@ import { Spinner } from "../components/ui/Spinner";
 import { MAX_FILE_SIZE, DOCUMENT_TYPES } from "../lib/constants";
 
 export const Documents: React.FC = () => {
-  // const { activeWorkspace } = useWorkspace();
-  // const workspaceId = activeWorkspace?.id ?? "";
   const [search, setSearch] = useState("");
   const [showUpload, setShowUpload] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -44,11 +41,11 @@ export const Documents: React.FC = () => {
   const handleFile = async (file: File) => {
     setError("");
     if (file.size > MAX_FILE_SIZE) {
-      setError("Fayl hajmi 25MB dan oshmasligi kerak");
+      setError("Fayl hajmi 20MB dan oshmasligi kerak");
       return;
     }
     const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
-    if (!DOCUMENT_TYPES.includes(ext as any)) {
+    if (!DOCUMENT_TYPES.includes(ext as (typeof DOCUMENT_TYPES)[number])) {
       setError(`${ext} format qo'llab-quvvatlanmaydi`);
       return;
     }
@@ -56,7 +53,7 @@ export const Documents: React.FC = () => {
     try {
       await uploadMutation.mutateAsync({ file, category: "" });
       setShowUpload(false);
-    } catch (err) {
+    } catch {
       setError("Yuklashda xatolik yuz berdi");
     } finally {
       setUploading(false);
@@ -189,7 +186,7 @@ export const Documents: React.FC = () => {
                     Faylni shu yerga tashlang
                   </p>
                   <p className="mt-1 text-xs text-zinc-600">
-                    PDF, DOCX, TXT, MD, XLSX — max 25MB
+                    PDF, TXT, MD — max 20MB
                   </p>
                 </>
               )}
@@ -197,7 +194,7 @@ export const Documents: React.FC = () => {
                 ref={fileRef}
                 type="file"
                 className="hidden"
-                accept=".pdf,.docx,.txt,.md,.xlsx"
+                accept=".pdf,.txt,.md"
                 onChange={(e) => {
                   const f = e.target.files?.[0];
                   if (f) handleFile(f);

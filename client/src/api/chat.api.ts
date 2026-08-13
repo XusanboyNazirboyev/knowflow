@@ -14,7 +14,7 @@ export const chatApi = {
     // --- Conversations ---
     async listConversations(workspaceId: string): Promise<Conversation[]> {
         return await apiClient.get<Conversation[]>(
-            `/workspaces/${workspaceId}/conversations`,
+            `/workspaces/${workspaceId}/chat/conversations`,
         );
     },
 
@@ -23,7 +23,7 @@ export const chatApi = {
         payload?: CreateConversationPayload,
     ): Promise<Conversation> {
         return await apiClient.post<Conversation>(
-            `/workspaces/${workspaceId}/conversations`,
+            `/workspaces/${workspaceId}/chat/conversations`,
             payload || {},
         );
     },
@@ -51,9 +51,10 @@ export const chatApi = {
         workspaceId: string,
         conversationId: string,
     ): Promise<Message[]> {
-        return await apiClient.get<Message[]>(
-            `/workspaces/${workspaceId}/conversations/${conversationId}/messages`,
+        const conversation = await apiClient.get<Conversation & { messages: Message[] }>(
+            `/workspaces/${workspaceId}/chat/conversations/${conversationId}`,
         );
+        return conversation.messages;
     },
 
     /** Asosiy RAG endpoint — savol yuborib AI javob + sources olish */
@@ -63,7 +64,8 @@ export const chatApi = {
     ): Promise<ChatResponse> {
         return await apiClient.post<ChatResponse>(
             `/workspaces/${workspaceId}/chat`,
-            payload,
+            { content: payload.content },
+            { params: payload.conversationId ? { conversationId: payload.conversationId } : undefined },
         );
     },
 };

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Get, Param, Delete } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Get, Param, Delete, Patch } from '@nestjs/common';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { WorkspacesService } from './workspaces.service';
 import { CreateWorkspaceDto } from './dto/create-workspace.dto';
@@ -7,6 +7,7 @@ import { TenantGuard } from '@/common/guards/tenat.guard';
 import { WorkspaceRole } from '@prisma/client';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
+import { InviteMemberDto } from './dto/invite-member.dto';
 @Controller('workspaces')
 @UseGuards(JwtAuthGuard)
 export class WorkspacesController {
@@ -22,6 +23,39 @@ export class WorkspacesController {
   @Get()
   async findAll(@CurrentUser() user: { id: string }) {
     return await this.workspacesService.findAllForUser(user.id);
+  }
+  @Get('invitations/mine')
+  async findMyInvitations(@CurrentUser() user: { email: string }) {
+    return this.workspacesService.findPendingInvitations(user.email);
+  }
+
+  @Get('notifications')
+  findNotifications(@CurrentUser() user: { id: string }) {
+    return this.workspacesService.findNotifications(user.id);
+  }
+
+  @Patch('notifications/:notificationId/read')
+  markNotificationRead(
+    @Param('notificationId') notificationId: string,
+    @CurrentUser() user: { id: string },
+  ) {
+    return this.workspacesService.markNotificationRead(notificationId, user.id);
+  }
+
+  @Post('invitations/:invitationId/accept')
+  async acceptInvitation(
+    @Param('invitationId') invitationId: string,
+    @CurrentUser() user: { id: string; email: string },
+  ) {
+    return this.workspacesService.acceptInvitation(invitationId, user);
+  }
+
+  @Post('invitations/:invitationId/decline')
+  async declineInvitation(
+    @Param('invitationId') invitationId: string,
+    @CurrentUser() user: { email: string },
+  ) {
+    return this.workspacesService.declineInvitation(invitationId, user.email);
   }
   @Get(':id')
   @UseGuards(JwtAuthGuard, TenantGuard)
@@ -40,9 +74,25 @@ export class WorkspacesController {
   @Roles('OWNER', 'ADMIN')
   async inviteMember(
     @Param('id') id: string,
-    @Body() dto: { email: string; role: WorkspaceRole },
+    @CurrentUser() user: { id: string },
+    @Body() dto: InviteMemberDto,
   ) {
-    return await this.workspacesService.inviteMember(id, dto.email, dto.role);
+    return await this.workspacesService.inviteMember(
+      id,
+      user.id,
+      dto.email,
+      dto.role,
+    );
+  }
+
+  @Delete(':id/invitations/:invitationId')
+  @UseGuards(JwtAuthGuard, TenantGuard, RolesGuard)
+  @Roles('OWNER', 'ADMIN')
+  cancelInvitation(
+    @Param('id') id: string,
+    @Param('invitationId') invitationId: string,
+  ) {
+    return this.workspacesService.cancelInvitation(id, invitationId);
   }
 
   @Delete(':id/members/:memberId')

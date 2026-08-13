@@ -1,8 +1,3 @@
-/**
- * Auth context — frontend global auth state.
- * Login bo'lganda user + token saqlanadi, logout tozalanadi.
- * React Context + useReducer — Redux ga muhtoj emas.
- */
 import React, { createContext, useContext, useReducer, useEffect, useCallback } from "react";
 import { authApi } from "../api/auth.api";
 import type { User } from "../types";
@@ -26,11 +21,7 @@ const initialState: AuthState = {
 function authReducer(state: AuthState, action: AuthAction): AuthState {
   switch (action.type) {
     case "SET_USER":
-      return {
-        user: action.user,
-        isAuthenticated: !!action.user,
-        isLoading: false,
-      };
+      return { user: action.user, isAuthenticated: !!action.user, isLoading: false };
     case "SET_LOADING":
       return { ...state, isLoading: action.isLoading };
     default:
@@ -51,13 +42,8 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  // App yuklanganda — token bo'lsa, me() bilan user ni tiklaymiz
+  // Cookie-based auth: har doim me()ni so'raymiz, "token bormi" deb tekshirmaymiz
   const initAuth = useCallback(async () => {
-    const token = localStorage.getItem("access_token");
-    if (!token) {
-      dispatch({ type: "SET_USER", user: null });
-      return;
-    }
     const user = await authApi.me();
     dispatch({ type: "SET_USER", user });
   }, []);
@@ -67,25 +53,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [initAuth]);
 
   const login = useCallback(async (email: string, password: string) => {
-    const res = await authApi.login({ email, password });
-    dispatch({ type: "SET_USER", user: res.user });
+    const user = await authApi.login({ email, password });
+    dispatch({ type: "SET_USER", user });
   }, []);
 
   const register = useCallback(
     async (email: string, password: string, fullName?: string) => {
-      const res = await authApi.register({ email, password, fullName });
-      dispatch({ type: "SET_USER", user: res.user });
+      await authApi.register({ email, password, fullName });
+      const user = await authApi.login({ email, password });
+      dispatch({ type: "SET_USER", user });
     },
-    []
+    [],
   );
 
   const loginWithGoogle = useCallback(() => {
-    authApi.loginWithGoogle();
+    alert("Google orqali kirish hozircha ishlab chiqilmoqda");
   }, []);
 
   const logout = useCallback(async () => {
-    await authApi.logout();
-    dispatch({ type: "SET_USER", user: null });
+    try {
+      await authApi.logout();
+    } finally {
+      dispatch({ type: "SET_USER", user: null });
+    }
   }, []);
 
   const refreshUser = useCallback(async () => {
@@ -94,9 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider
-      value={{ ...state, login, register, loginWithGoogle, logout, refreshUser }}
-    >
+    <AuthContext.Provider value={{ ...state, login, register, loginWithGoogle, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

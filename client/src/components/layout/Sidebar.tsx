@@ -29,7 +29,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 
 export const Sidebar: React.FC = () => {
   const location = useLocation();
-  const { activeWorkspace, workspaces } = useWorkspace();
+  const { activeWorkspace, workspaces, setActiveWorkspace } = useWorkspace();
   const { user } = useAuth();
 
   return (
@@ -41,9 +41,27 @@ export const Sidebar: React.FC = () => {
             <FileText className="h-4 w-4" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-zinc-200">
-              {activeWorkspace?.name ?? "No workspace"}
-            </p>
+            {workspaces.length > 1 ? (
+              <select
+                value={activeWorkspace?.id ?? ""}
+                onChange={(event) => {
+                  const workspace = workspaces.find((item) => item.id === event.target.value);
+                  if (workspace) setActiveWorkspace(workspace);
+                }}
+                className="w-full cursor-pointer appearance-none bg-transparent text-sm font-medium text-zinc-200 focus:outline-none"
+                aria-label="Faol workspace"
+              >
+                {workspaces.map((workspace) => (
+                  <option key={workspace.id} value={workspace.id} className="bg-zinc-900">
+                    {workspace.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <p className="truncate text-sm font-medium text-zinc-200">
+                {activeWorkspace?.name ?? "No workspace"}
+              </p>
+            )}
             <p className="text-[10px] text-zinc-600">
               {activeWorkspace?.plan ?? "free"} plan
             </p>

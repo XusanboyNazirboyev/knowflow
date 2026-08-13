@@ -25,7 +25,7 @@ export const Login: React.FC = () => {
     try {
       await login(email, password);
       navigate(ROUTES.DASHBOARD);
-    } catch (err) {
+    } catch {
       setError("Email yoki parol noto'g'ri");
     } finally {
       setLoading(false);

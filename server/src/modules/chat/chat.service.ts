@@ -1,5 +1,5 @@
 import { PrismaService } from '@/database/prisma/prisma.service';
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { SearchService } from '../search/search.service';
 import { GenerationService } from '../processing/generation/generation.service';
 
@@ -20,10 +20,14 @@ export class ChatService {
     content: string,
   ) {
     let conversation = conversationId
-      ? await this.prisma.conversation.findUnique({
-          where: { id: conversationId },
+      ? await this.prisma.conversation.findFirst({
+          where: { id: conversationId, workspaceId },
         })
       : null;
+
+    if (conversationId && !conversation) {
+      throw new NotFoundException('Suhbat topilmadi');
+    }
 
     if (!conversation) {
       conversation = await this.prisma.conversation.create({
@@ -69,11 +73,18 @@ export class ChatService {
       })),
     };
   }
-  async getConversation(conversationId: string) {
-    return this.prisma.conversation.findUnique({
-      where: { id: conversationId },
+  async createConversation(workspaceId: string, title?: string) {
+    return this.prisma.conversation.create({
+      data: { workspaceId, title: title?.trim() || 'Yangi suhbat' },
+    });
+  }
+  async getConversation(workspaceId: string, conversationId: string) {
+    const conversation = await this.prisma.conversation.findFirst({
+      where: { id: conversationId, workspaceId },
       include: { messages: { orderBy: { createdAt: 'asc' } } },
     });
+    if (!conversation) throw new NotFoundException('Suhbat topilmadi');
+    return conversation;
   }
   async listConversations(workspaceId: string) {
     return this.prisma.conversation.findMany({

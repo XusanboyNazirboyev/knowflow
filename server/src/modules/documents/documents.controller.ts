@@ -2,6 +2,7 @@ import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { TenantGuard } from '@/common/guards/tenat.guard';
 import {
   Controller,
+  Delete,
   FileTypeValidator,
   Get,
   MaxFileSizeValidator,
@@ -27,7 +28,7 @@ export class DocumentsController {
       new ParseFilePipe({
         validators: [
           new MaxFileSizeValidator({ maxSize: 20 * 1024 * 1024 }),
-          new FileTypeValidator({ fileType: '.(pdf|docx|txt)' }),
+          new FileTypeValidator({ fileType: /^(application\/pdf|text\/(plain|markdown))$/ }),
         ],
       }),
     )
@@ -54,5 +55,9 @@ export class DocumentsController {
     @Param('id') id: string,
   ) {
     return this.docService.getDownloadUrl(workspaceId, id);
+  }
+  @Delete(':id')
+  remove(@Param('workspaceId') workspaceId: string, @Param('id') id: string) {
+    return this.docService.remove(workspaceId, id);
   }
 }

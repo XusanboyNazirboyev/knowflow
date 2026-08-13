@@ -141,14 +141,17 @@
 //  * Interceptor .data.data ni avtomat oladi — komponent toza bo'ladi.
 //  */
 
-import axios, { type InternalAxiosRequestConfig } from "axios";
+import axios, {
+    type AxiosRequestConfig,
+    type InternalAxiosRequestConfig,
+} from "axios";
 
 interface TypedApiClient {
-    get<T = unknown>(url: string, config?: any): Promise<T>;
-    post<T = unknown>(url: string, data?: unknown, config?: any): Promise<T>;
-    put<T = unknown>(url: string, data?: unknown, config?: any): Promise<T>;
-    patch<T = unknown>(url: string, data?: unknown, config?: any): Promise<T>;
-    delete<T = unknown>(url: string, config?: any): Promise<T>;
+    get<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T>;
+    post<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T>;
+    put<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T>;
+    patch<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T>;
+    delete<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T>;
 }
 
 const apiClient = axios.create({
@@ -160,14 +163,42 @@ const apiClient = axios.create({
     },
 });
 
+interface RetriableRequestConfig extends InternalAxiosRequestConfig {
+    _retry?: boolean;
+}
+
+let refreshPromise: Promise<unknown> | null = null;
+
 apiClient.interceptors.response.use(
     (response) => response.data,
-    (error) => {
-        console.log(
-            "XOM XATO JAVOBI:",
-            error.response?.status,
-            error.response?.data,
-        ); // ← vaqtincha
+    async (error) => {
+        const originalRequest = error.config as RetriableRequestConfig | undefined;
+
+        if (error.response?.status === 403) {
+            window.dispatchEvent(new Event("workspace-access-revoked"));
+        }
+
+        if (
+            error.response?.status === 401 &&
+            originalRequest &&
+            !originalRequest._retry &&
+            !originalRequest.url?.endsWith("/auth/refresh")
+        ) {
+            originalRequest._retry = true;
+            refreshPromise ??= apiClient.post("/auth/refresh", {}).finally(() => {
+                refreshPromise = null;
+            });
+
+            try {
+                await refreshPromise;
+                return apiClient(originalRequest);
+            } catch {
+                if (window.location.pathname.startsWith("/app")) {
+                    window.location.assign("/login");
+                }
+            }
+        }
+
         const rawMessage = error.response?.data?.message;
         const message = Array.isArray(rawMessage)
             ? rawMessage.join(", ")

@@ -29,13 +29,23 @@ export class ChatController {
       dto.content,
     );
   }
+  @Post('conversations')
+  createConversation(
+    @Param('workspaceId') workspaceId: string,
+    @Body('title') title?: string,
+  ) {
+    return this.chatService.createConversation(workspaceId, title);
+  }
   @Get('conversations')
   listConversations(@Param('workspaceId') workspaceId: string) {
     return this.chatService.listConversations(workspaceId);
   }
 
   @Get('conversations/:id')
-  getConversation(@Param('id') id: string) {
-    return this.chatService.getConversation(id);
+  getConversation(
+    @Param('workspaceId') workspaceId: string,
+    @Param('id') id: string,
+  ) {
+    return this.chatService.getConversation(workspaceId, id);
   }
 }

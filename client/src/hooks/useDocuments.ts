@@ -17,7 +17,9 @@ export function useDocuments(params?: DocumentQueryParams) {
         enabled: !!workspaceId,
         // Processing documentlar uchun refetch har 5 soniyada
         refetchInterval: (query) =>
-            query.state.data?.items.some((d) => d.status === "processing")
+            query.state.data?.items.some(
+                (d) => d.status === "PENDING" || d.status === "PROCESSING",
+            )
                 ? 5000
                 : false,
     });

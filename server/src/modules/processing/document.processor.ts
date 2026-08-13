@@ -21,44 +21,60 @@ export class DocumentProcessor extends WorkerHost {
   async process(job: Job<{ documentId: string }>): Promise<void> {
     const { documentId } = job.data;
 
-    await this.prisma.document.update({
-      where: { id: documentId },
-      data: { status: 'PROCESSING' },
-    });
+    try {
+      await this.prisma.document.update({
+        where: { id: documentId },
+        data: { status: 'PROCESSING' },
+      });
 
-    const document = await this.prisma.document.findUnique({
-      where: { id: documentId },
-    });
-    if (!document) {
-      throw new NotFoundException(`Hujjat topilmadi ${documentId}`);
+      const document = await this.prisma.document.findUnique({
+        where: { id: documentId },
+      });
+      if (!document) {
+        throw new NotFoundException(`Hujjat topilmadi: ${documentId}`);
+      }
+
+      // Qayta ishlashda, eski chunk'larni tozalash (pastda tushuntiraman)
+      await this.prisma.documentChunk.deleteMany({ where: { documentId } });
+
+      const fileBuffer = await this.storageService.getFileBuffer(
+        document.storageKey,
+      );
+      const extractedText = await this.extractText(
+        fileBuffer,
+        document.mimeType,
+      );
+      const chunks = chunkText(extractedText);
+
+      for (let i = 0; i < chunks.length; i++) {
+        const embedding = await this.embeddingService.embedText(chunks[i]);
+        const vectorLiteral = `[${embedding.join(',')}]`;
+        await this.prisma.$executeRaw`
+        INSERT INTO document_chunks (id, content, "chunkIndex", "documentId", embedding)
+        VALUES (${randomUUID()}, ${chunks[i]}, ${i}, ${documentId}, ${vectorLiteral}::vector)
+      `;
+      }
+
+      await this.prisma.document.update({
+        where: { id: documentId },
+        data: { status: 'READY' },
+      });
+    } catch (error) {
+      console.error(`Hujjatni qayta ishlashda xato (${documentId}):`, error);
+      // Hujjat worker ishlayotgan paytda o'chirilgan bo'lishi mumkin.
+      // Bu holda ishni qayta urinishga majburlashning hojati yo'q.
+      const markedAsFailed = await this.prisma.document
+        .update({
+          where: { id: documentId },
+          data: { status: 'FAILED' },
+        })
+        .then(() => true)
+        .catch(() => false);
+      if (!markedAsFailed) return;
+      throw error;
     }
-
-    const fileBuffer = await this.storageService.getFileBuffer(
-      document.storageKey,
-    );
-
-    const extractedText = await this.extractText(fileBuffer, document.mimeType);
-
-    const chunks = chunkText(extractedText);
-
-    console.log(`Jami ${chunks.length} ta chunk, embedding boshlanmoqda...`);
-
-    for (let i = 0; i < chunks.length; i++) {
-      const embedding = await this.embeddingService.embedText(chunks[i]);
-      const vectorLiteral = `[${embedding.join(',')}]`;
-
-      await this.prisma.$executeRaw`
-    INSERT INTO document_chunks (id, content, "chunkIndex", "documentId", embedding)
-    VALUES (${randomUUID()}, ${chunks[i]}, ${i}, ${documentId}, ${vectorLiteral}::vector)
-  `;
-      console.log(`Chunk ${i + 1}/${chunks.length} saqlandi`);
-    }
-
-    await this.prisma.document.update({
-      where: { id: documentId },
-      data: { status: 'READY' },
-    });
   }
+
   private async extractText(buffer: Buffer, mimeType: string): Promise<string> {
     if (mimeType === 'application/pdf') {
       const parser = new PDFParse({ data: buffer });
@@ -70,7 +86,7 @@ export class DocumentProcessor extends WorkerHost {
       }
     }
 
-    if (mimeType === 'text/plain') {
+    if (mimeType === 'text/plain' || mimeType === 'text/markdown') {
       return buffer.toString('utf-8');
     }
 

@@ -62,22 +62,19 @@ import apiClient from "./client";
 import type { LoginPayload, RegisterPayload, User } from "../types";
 
 export const authApi = {
-    async login(payload: LoginPayload): Promise<{ user: User }> {
-        return await apiClient.post<{ user: User }>("/auth/login", payload);
+    async login(payload: LoginPayload): Promise<User> {
+        const res = await apiClient.post<{ user: User }>(
+            "/auth/login",
+            payload,
+        );
+        return res.user;
     },
 
     async register(payload: RegisterPayload): Promise<User> {
-        console.log("YUBORILAYOTGAN PAYLOAD:", payload); // ← vaqtincha qo'shing
-        try {
-            return await apiClient.post<User>("/auth/register", payload);
-        } catch (error: any) {
-            console.log("BACKEND XATOSI:", error.response?.data); // ← vaqtincha qo'shing
-            throw error;
-        }
+        return await apiClient.post<User>("/auth/register", payload);
     },
-
     async logout(): Promise<void> {
-        // Backend'da hali logout endpoint yo'q — keyingi qadamda qo'shamiz
+        await apiClient.post("/auth/logout", {});
     },
 
     async me(): Promise<User | null> {

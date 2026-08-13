@@ -24,6 +24,11 @@ const fileTypeColors: Record<string, string> = {
   xlsx: "text-amber-400 bg-amber-500/10",
 };
 
+function getFileType(document: Document): string {
+  const extension = document.fileName.split(".").pop()?.toLowerCase();
+  return extension ?? "file";
+}
+
 export const DocumentCard: React.FC<DocumentCardProps> = ({
   document,
   onDelete,
@@ -32,8 +37,8 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
     <Card className="group relative p-4 transition-colors hover:border-amber-500/30">
       <div className="flex items-start gap-3">
         <div
-          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${fileTypeColors[document.fileType] ?? "text-zinc-400 bg-zinc-500/10"
-            }`}
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${fileTypeColors[getFileType(document)] ?? "text-zinc-400 bg-zinc-500/10"
+          }`}
         >
           <FileText className="h-5 w-5" />
         </div>
@@ -43,10 +48,10 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
           className="min-w-0 flex-1"
         >
           <h3 className="truncate text-sm font-medium text-zinc-100 group-hover:text-amber-400">
-            {document.title}
+            {document.fileName}
           </h3>
           <p className="mt-0.5 text-xs text-zinc-600">
-            {document.fileType.toUpperCase()} · {formatBytes(document.fileSize)}
+            {getFileType(document).toUpperCase()} · {formatBytes(document.fileSize)}
           </p>
         </Link>
 
@@ -60,12 +65,6 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
         )}
       </div>
 
-      {document.summary && (
-        <p className="mt-3 line-clamp-2 text-xs text-zinc-500">
-          {document.summary}
-        </p>
-      )}
-
       <div className="mt-3 flex items-center justify-between border-t border-zinc-800/60 pt-3">
         <StatusBadge status={document.status} />
         <span className="text-[10px] text-zinc-600">
@@ -73,14 +72,6 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
         </span>
       </div>
 
-      {document.status === "processing" && document.progress > 0 && (
-        <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-zinc-800">
-          <div
-            className="h-full bg-amber-500 transition-all"
-            style={{ width: `${document.progress}%` }}
-          />
-        </div>
-      )}
     </Card>
   );
 };

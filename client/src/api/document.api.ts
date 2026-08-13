@@ -12,12 +12,12 @@ import type {
 export const documentApi = {
     async list(
         workspaceId: string,
-        params?: DocumentQueryParams,
+        _params?: DocumentQueryParams,
     ): Promise<PaginatedResult<Document>> {
-        return await apiClient.get<PaginatedResult<Document>>(
+        const items = await apiClient.get<Document[]>(
             `/workspaces/${workspaceId}/documents`,
-            { params },
         );
+        return { items, total: items.length, page: 1, limit: items.length, hasMore: false };
     },
 
     async get(workspaceId: string, id: string): Promise<Document> {
@@ -47,7 +47,7 @@ export const documentApi = {
 
     async downloadUrl(workspaceId: string, id: string): Promise<string> {
         const res = await apiClient.get<{ url: string }>(
-            `/workspaces/${workspaceId}/documents/${id}/download`,
+            `/workspaces/${workspaceId}/documents/${id}/download-url`,
         );
         return res.url;
     },

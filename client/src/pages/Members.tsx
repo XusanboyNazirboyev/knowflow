@@ -28,6 +28,8 @@ export const Members: React.FC = () => {
     queryKey: ["members", workspaceId],
     queryFn: () => memberApi.list(workspaceId),
     enabled: !!workspaceId,
+    refetchInterval: 5000,
+    refetchOnWindowFocus: true,
   });
 
   const inviteMutation = useMutation({
@@ -146,8 +148,8 @@ export const Members: React.FC = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-zinc-100">
-                A'zo taklif etish
+            <h2 className="text-lg font-semibold text-zinc-100">
+                Workspace ga taklif etish
               </h2>
               <button
                 onClick={() => !inviteMutation.isPending && setShowInvite(false)}

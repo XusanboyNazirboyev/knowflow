@@ -37,12 +37,12 @@ export const Chat: React.FC = () => {
 
   const send = async () => {
     const text = input.trim();
-    if (!text || sendMessage.isPending || !id) return;
+    if (!text || sendMessage.isPending) return;
     setInput("");
     try {
-      await sendMessage.mutateAsync({ conversationId: id, content: text });
-    } catch (err) {
-      console.error(err);
+      const response = await sendMessage.mutateAsync({ conversationId: id, content: text });
+      if (!id) navigate(ROUTES.CHAT_DETAIL(response.conversationId), { replace: true });
+    } catch {
     }
   };
 
@@ -51,7 +51,7 @@ export const Chat: React.FC = () => {
   };
 
   const sortedConvs = [...(conversations ?? [])].sort((a, b) =>
-    b.updatedAt.localeCompare(a.updatedAt)
+    b.createdAt.localeCompare(a.createdAt)
   );
 
   return (
@@ -199,7 +199,7 @@ export const Chat: React.FC = () => {
               />
               <button
                 onClick={send}
-                disabled={!input.trim() || sendMessage.isPending || !id}
+                disabled={!input.trim() || sendMessage.isPending}
                 className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500 text-zinc-950 disabled:cursor-not-allowed disabled:opacity-30 hover:bg-amber-400"
               >
                 <ArrowUp className="h-4 w-4" />

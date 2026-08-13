@@ -25,15 +25,21 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
 
   const loadWorkspaces = useCallback(async () => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated) {
+      setWorkspaces([]);
+      setActiveWorkspace(null);
+      return;
+    }
     setIsLoading(true);
     try {
       const list = await workspaceApi.list();
       setWorkspaces(list);
-      // Birinchi workspace ni faol qilamiz yoki localStorage dan tiklaymiz
-      const savedId = localStorage.getItem("active_workspace_id");
+
+      const savedId = localStorage.getItem("active_workspace_id");   // ← QAYTARILDI
       const saved = savedId ? list.find((w) => w.id === savedId) : null;
-      setActiveWorkspace(saved || list[0] || null);
+      const nextWorkspace = saved || list[0] || null;
+      if (!nextWorkspace) localStorage.removeItem("active_workspace_id");
+      setActiveWorkspace(nextWorkspace);
     } finally {
       setIsLoading(false);
     }
@@ -41,6 +47,22 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     loadWorkspaces();
+  }, [loadWorkspaces]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const interval = window.setInterval(() => void loadWorkspaces(), 5000);
+    return () => window.clearInterval(interval);
+  }, [isAuthenticated, loadWorkspaces]);
+
+  useEffect(() => {
+    const refresh = () => void loadWorkspaces();
+    window.addEventListener("focus", refresh);
+    window.addEventListener("workspace-access-revoked", refresh);
+    return () => {
+      window.removeEventListener("focus", refresh);
+      window.removeEventListener("workspace-access-revoked", refresh);
+    };
   }, [loadWorkspaces]);
 
   const switchWorkspace = useCallback((ws: Workspace) => {

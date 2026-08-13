@@ -55,4 +55,13 @@ export class DocumentsService {
     );
     return { url, fileName: document.fileName };
   }
+  async remove(workspaceId: string, id: string) {
+    const document = await this.findOne(workspaceId, id);
+
+    await this.prisma.documentChunk.deleteMany({ where: { documentId: id } });
+    await this.prisma.document.delete({ where: { id } });
+    await this.storageService.deleteFile(document.storageKey);
+
+    return { message: "Hujjat o'chirildi" };
+  }
 }

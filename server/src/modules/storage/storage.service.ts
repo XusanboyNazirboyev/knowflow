@@ -1,5 +1,6 @@
 import {
   CreateBucketCommand,
+  DeleteObjectCommand,
   GetObjectCommand,
   HeadBucketCommand,
   PutObjectCommand,
@@ -20,7 +21,7 @@ export class StorageService implements OnModuleInit {
       region: 'us-east-1',
       credentials: {
         accessKeyId: this.configService.getOrThrow('MINIO_ACCESS_KEY'),
-        secretAccessKey: this.configService.getOrThrow('MINIO_ACCESS_KEY'),
+        secretAccessKey: this.configService.getOrThrow('MINIO_SECRET_KEY'),
       },
       forcePathStyle: true,
     });
@@ -61,5 +62,14 @@ export class StorageService implements OnModuleInit {
       chunks.push(chunk);
     }
     return Buffer.concat(chunks);
+  }
+
+  async deleteFile(key: string): Promise<void> {
+    await this.client.send(
+      new DeleteObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+      }),
+    );
   }
 }
