@@ -1,24 +1,20 @@
-export function chunkText(
-  text: string,
-  chunkSize: number = 800,
-  overlap: number = 150,
-): string[] {
-  const chunks: string[] = [];
-  let startIndex = 0;
+export function chunkText(text: string): string[] {
+  const normalizedText = text
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    .trim();
 
-  while (startIndex < text.length) {
-    const endIndex = Math.min(startIndex + chunkSize, text.length);
-    const chunk = text.slice(startIndex, endIndex).trim();
+  if (!normalizedText) {
+    return [];
+  }
 
-    if (chunk.length > 0) {
-      chunks.push(chunk);
-    }
+  const chunks = normalizedText
+    .split(/(?=\d+\.\s)/)
+    .map((chunk) => chunk.trim())
+    .filter(Boolean);
 
-    if (endIndex === text.length) {
-      break;
-    }
-
-    startIndex = endIndex - overlap;
+  if (chunks.length > 1 && !/^\d+\.\s/.test(chunks[0])) {
+    chunks.shift();
   }
 
   return chunks;

@@ -16,7 +16,11 @@ export class DocumentsService {
     const key = `${workspaceId}/${randomUUID()}-${file.originalname}`;
 
     await this.storageService.uploadFile(key, file.buffer, file.mimetype);
-
+    console.log({
+      originalname: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size,
+    });
     const document = await this.prisma.document.create({
       data: {
         fileName: file.originalname,

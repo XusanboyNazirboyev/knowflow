@@ -15,6 +15,7 @@ import {
 } from '@nestjs/common';
 import { DocumentsService } from './documents.service';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { CustomFileTypeValidator } from './custom.validator';
 
 @Controller('workspaces/:workspaceId/documents')
 @UseGuards(JwtAuthGuard, TenantGuard)
@@ -28,7 +29,7 @@ export class DocumentsController {
       new ParseFilePipe({
         validators: [
           new MaxFileSizeValidator({ maxSize: 20 * 1024 * 1024 }),
-          new FileTypeValidator({ fileType: /^(application\/pdf|text\/(plain|markdown))$/ }),
+          new CustomFileTypeValidator()
         ],
       }),
     )

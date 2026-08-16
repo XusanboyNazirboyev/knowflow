@@ -1,0 +1,9 @@
+JavaScriptda Object va Map o‘rtasidagi farq:
+
+Object — key-value ma'lumotlarni saqlash uchun ishlatiladigan JavaScript obyektidir. Object keylari odatda string yoki Symbol bo‘ladi.
+
+Map esa key-value juftliklarini saqlaydigan maxsus JavaScript kolleksiyasidir. Map'da key sifatida string, number, object, function va boshqa qiymatlardan foydalanish mumkin.
+
+Map elementlarni insertion order bo‘yicha saqlaydi va size property orqali elementlar sonini olish mumkin.
+
+Object uchun Object.keys(), Object.values() va Object.entries() metodlaridan foydalanish mumkin.

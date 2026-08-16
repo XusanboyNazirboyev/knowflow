@@ -39,9 +39,10 @@ model User {
   fullName  String
   createdAt DateTime @default(now())
 
-  memberships WorkspaceMember[]
-  invitations WorkspaceInvitation[]
+  memberships   WorkspaceMember[]
+  invitations   WorkspaceInvitation[]
   notifications ApplicationNotification[]
+  conversations Conversation[]
 
   @@map("users")
 }
@@ -56,6 +57,9 @@ model Workspace {
   invitations   WorkspaceInvitation[]
   documents     Document[]
   conversations Conversation[]
+  description   String?
+  accentColor   String?               @default("#F59E0B")
+  updatedAt     DateTime              @updatedAt
 
   @@map("workspaces")
 }
@@ -126,31 +130,46 @@ model DocumentChunk {
   content    String
   chunkIndex Int
   embedding  Unsupported("vector(1536)")?
-  document   Document                     @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
   documentId String
 
+  @@unique([documentId, chunkIndex])
+  @@index([documentId])
   @@map("document_chunks")
 }
 
 model Conversation {
-  id          String    @id @default(uuid())
-  title       String?
-  createdAt    DateTime  @default(now())
+  id        String   @id @default(uuid())
+  title     String?
+  createdAt DateTime @default(now())
+
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   workspaceId String
-  messages    Message[]
 
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  messages Message[]
+
+  @@index([workspaceId])
+  @@index([userId])
   @@map("conversations")
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
 }
 
 model Message {
   id String @id @default(uuid())
 
-  role           String
+  role           MessageRole
   content        String
-  createdAt       DateTime      @default(now())
-  conversation   Conversation? @relation(fields: [conversationId], references: [id])
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   conversationId String
+  createdAt      DateTime      @default(now())
 
   @@map("messages")
 }

@@ -20,10 +20,12 @@ export class PrismaService
     super({ adapter, log: ['error', 'warn'] });
   }
   async onModuleInit() {
-    Logger.log('Database connected✅');
+    await this.$connect();
+    Logger.log('Database connected ✅');
   }
 
   async onModuleDestroy() {
-    Logger.log('Database disconnected❌');
+    await this.$disconnect();
+    Logger.log('Database disconnected ❌');
   }
 }
