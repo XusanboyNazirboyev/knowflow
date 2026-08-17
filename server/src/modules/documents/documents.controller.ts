@@ -29,7 +29,7 @@ export class DocumentsController {
       new ParseFilePipe({
         validators: [
           new MaxFileSizeValidator({ maxSize: 20 * 1024 * 1024 }),
-          new CustomFileTypeValidator()
+          new CustomFileTypeValidator(),
         ],
       }),
     )
@@ -60,5 +60,12 @@ export class DocumentsController {
   @Delete(':id')
   remove(@Param('workspaceId') workspaceId: string, @Param('id') id: string) {
     return this.docService.remove(workspaceId, id);
+  }
+  @Post(':id/reprocess')
+  reprocess(
+    @Param('workspaceId') workspaceId: string,
+    @Param('id') id: string,
+  ) {
+    return this.docService.reprocess(workspaceId, id);
   }
 }

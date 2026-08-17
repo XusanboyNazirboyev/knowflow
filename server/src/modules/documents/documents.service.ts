@@ -68,4 +68,18 @@ export class DocumentsService {
 
     return { message: "Hujjat o'chirildi" };
   }
+  async reprocess(workspaceId: string, id: string) {
+    const document = await this.findOne(workspaceId, id);
+
+    await this.prisma.document.update({
+      where: { id: document.id },
+      data: { status: 'PENDING' },
+    });
+
+    await this.documentQueue.add('process-document', {
+      documentId: document.id,
+    });
+
+    return { message: "Hujjat qayta navbatga qo'yildi" };
+  }
 }

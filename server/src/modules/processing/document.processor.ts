@@ -49,10 +49,15 @@ export class DocumentProcessor extends WorkerHost {
       for (let i = 0; i < chunks.length; i++) {
         const embedding = await this.embeddingService.embedText(chunks[i]);
         const vectorLiteral = `[${embedding.join(',')}]`;
+
         await this.prisma.$executeRaw`
-        INSERT INTO document_chunks (id, content, "chunkIndex", "documentId", embedding)
-        VALUES (${randomUUID()}, ${chunks[i]}, ${i}, ${documentId}, ${vectorLiteral}::vector)
-      `;
+    INSERT INTO document_chunks (id, content, "chunkIndex", "documentId", embedding)
+    VALUES (${randomUUID()}, ${chunks[i]}, ${i}, ${documentId}, ${vectorLiteral}::vector)
+  `;
+
+        if (i < chunks.length - 1) {
+          await new Promise((resolve) => setTimeout(resolve, 650));
+        }
       }
 
       await this.prisma.document.update({
@@ -61,16 +66,23 @@ export class DocumentProcessor extends WorkerHost {
       });
     } catch (error) {
       console.error(`Hujjatni qayta ishlashda xato (${documentId}):`, error);
-      // Hujjat worker ishlayotgan paytda o'chirilgan bo'lishi mumkin.
-      // Bu holda ishni qayta urinishga majburlashning hojati yo'q.
-      const markedAsFailed = await this.prisma.document
-        .update({
-          where: { id: documentId },
-          data: { status: 'FAILED' },
-        })
-        .then(() => true)
-        .catch(() => false);
-      if (!markedAsFailed) return;
+
+      const stillExists = await this.prisma.document.findUnique({
+        where: { id: documentId },
+      });
+
+      if (!stillExists) {
+        console.log(
+          `Hujjat (${documentId}) worker ishlayotganda o'chirilgan — FAILED belgilash shart emas`,
+        );
+        return;
+      }
+
+      await this.prisma.document.update({
+        where: { id: documentId },
+        data: { status: 'FAILED' },
+      });
+
       throw error;
     }
   }
