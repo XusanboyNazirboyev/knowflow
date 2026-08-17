@@ -1,7 +1,7 @@
 import { PrismaService } from '@/database/prisma/prisma.service';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { SearchService } from '../search/search.service';
-import { GenerationService } from '../processing/generation/generation.service';
+import { GenerationService } from '../rag/generation/generation.service';
 
 @Injectable()
 export class ChatService {
@@ -160,7 +160,7 @@ export class ChatService {
       },
     });
   }
-  
+
   async deleteConversation(
     workspaceId: string,
     userId: string,

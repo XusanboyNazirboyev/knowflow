@@ -4,7 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { DocumentProcessor } from './document.processor';
 import { StorageModule } from '@/modules/storage/storage.module';
 import { EmbeddingService } from './embedding/embedding.service';
-import { GenerationService } from './generation/generation.service';
+import { GenerationService } from '../rag/generation/generation.service';
 
 @Module({
   imports: [
