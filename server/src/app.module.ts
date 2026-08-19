@@ -8,6 +8,8 @@ import { DocumentsModule } from './modules/documents/documents.module';
 import { ProcessingModule } from './modules/processing/processing.module';
 import { SearchModule } from './modules/search/search.module';
 import { ChatModule } from './modules/chat/chat.module';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -15,6 +17,12 @@ import { ChatModule } from './modules/chat/chat.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 20,
+      },
+    ]),
     PrismaModule,
     AuthModule,
     WorkspaceModule,
@@ -23,6 +31,12 @@ import { ChatModule } from './modules/chat/chat.module';
     ProcessingModule,
     SearchModule,
     ChatModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
 })
 export class AppModule {}

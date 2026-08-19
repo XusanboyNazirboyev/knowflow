@@ -60,34 +60,33 @@ export class AuthService {
   async refresh(req: Request, res: Response) {
     const token = req.cookies?.['refreshToken'];
     if (!token) {
-      throw new UnauthorizedException('No refresh token');
+      throw new UnauthorizedException('Refresh token topilmadi');
     }
 
     let decoded: { sub: string; email: string };
     try {
       decoded = await this.jwtService.verifyAsync(token, {
-        secret: this.configService.get('JWT_SECRET'),
+        secret: this.configService.getOrThrow('JWT_SECRET'),
       });
     } catch {
-      throw new UnauthorizedException('Refresh token invalid');
+      throw new UnauthorizedException('Refresh token yaroqsiz');
     }
 
     const user = await this.prisma.user.findUnique({
       where: { id: decoded.sub },
     });
-    if (!user) throw new UnauthorizedException('User not found');
+    if (!user) {
+      throw new UnauthorizedException('Foydalanuvchi topilmadi');
+    }
 
-    const accessToken = await this.generateAccessToken({
-      sub: user.id,
-      email: user.email,
-    });
+    const payload = { sub: user.id, email: user.email };
+    const newAccessToken = await this.generateAccessToken(payload);
+    const newRefreshToken = await this.generateRefreshToken(payload);
 
-    res.cookie('accessToken', accessToken, {
-      httpOnly: true,
-      maxAge: 15 * 60 * 1000,
-    });
+    this.setTokenCookies(res, newAccessToken, newRefreshToken);
+
+    return { message: 'Token yangilandi' };
   }
-
   async forgotPassword() {}
 
   async resetPassword() {}
