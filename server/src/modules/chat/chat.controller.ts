@@ -25,8 +25,8 @@ export class ChatController {
 
   @Post()
   sendMessage(
-    @CurrentUser() user: { id: string },
     @Param('workspaceId') workspaceId: string,
+    @CurrentUser() user: { id: string },
     @Body() dto: SendMessageDto,
     @Query('conversationId') conversationId?: string,
   ) {
@@ -49,10 +49,15 @@ export class ChatController {
 
   @Get('conversations')
   listConversations(
-    @CurrentUser() user: { id: string },
     @Param('workspaceId') workspaceId: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
-    return this.chatService.listConversations(workspaceId, user.id);
+    return this.chatService.listConversations(
+      workspaceId,
+      page ? Number(page) : 1,
+      limit ? Number(limit) : 20,
+    );
   }
 
   @Get('conversations/:id')

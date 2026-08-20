@@ -46,17 +46,26 @@ export class DocumentProcessor extends WorkerHost {
       );
       const chunks = chunkText(extractedText);
 
-      for (let i = 0; i < chunks.length; i++) {
-        const embedding = await this.embeddingService.embedText(chunks[i]);
-        const vectorLiteral = `[${embedding.join(',')}]`;
+      const BATCH_SIZE = 20;
 
-        await this.prisma.$executeRaw`
-    INSERT INTO document_chunks (id, content, "chunkIndex", "documentId", embedding)
-    VALUES (${randomUUID()}, ${chunks[i]}, ${i}, ${documentId}, ${vectorLiteral}::vector)
-  `;
+      for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
+        const batch = chunks.slice(i, i + BATCH_SIZE);
+        const embeddings = await this.embeddingService.embedBatch(batch);
 
-        if (i < chunks.length - 1) {
-          await new Promise((resolve) => setTimeout(resolve, 650));
+        for (let j = 0; j < batch.length; j++) {
+          const vectorLiteral = `[${embeddings[j].join(',')}]`;
+          await this.prisma.$executeRaw`
+      INSERT INTO document_chunks (id, content, "chunkIndex", "documentId", embedding)
+      VALUES (${randomUUID()}, ${batch[j]}, ${i + j}, ${documentId}, ${vectorLiteral}::vector)
+    `;
+        }
+
+        console.log(
+          `${Math.min(i + BATCH_SIZE, chunks.length)}/${chunks.length} chunk qayta ishlandi`,
+        );
+
+        if (i + BATCH_SIZE < chunks.length) {
+          await new Promise((r) => setTimeout(r, 650));
         }
       }
 

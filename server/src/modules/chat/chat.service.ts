@@ -18,18 +18,10 @@ export class ChatService {
     content: string,
   ) {
     let conversation = conversationId
-      ? await this.prisma.conversation.findFirst({
-          where: {
-            id: conversationId,
-            workspaceId,
-            userId,
-          },
+      ? await this.prisma.conversation.findUnique({
+          where: { id: conversationId },
         })
       : null;
-
-    if (conversationId && !conversation) {
-      throw new NotFoundException('Suhbat topilmadi');
-    }
 
     if (!conversation) {
       conversation = await this.prisma.conversation.create({
@@ -40,6 +32,12 @@ export class ChatService {
         },
       });
     }
+
+    const previousMessages = await this.prisma.message.findMany({
+      where: { conversationId: conversation.id },
+      orderBy: { createdAt: 'asc' },
+      take: 10,
+    });
 
     await this.prisma.message.create({
       data: {
@@ -53,13 +51,19 @@ export class ChatService {
       workspaceId,
       content,
     );
-
     const context = searchResults
       .map((r, i) => `[${i + 1}] (${r.fileName})\n${r.content}`)
       .join('\n\n');
+
+    const history = previousMessages.map((m) => ({
+      role: m.role === 'USER' ? ('user' as const) : ('assistant' as const),
+      content: m.content,
+    }));
+
     const answer = await this.generationService.generateAnswer(
       content,
       context,
+      history,
     );
 
     const assistantMessage = await this.prisma.message.create({
@@ -67,6 +71,11 @@ export class ChatService {
         conversationId: conversation.id,
         role: 'ASSISTANT',
         content: answer,
+        sources: searchResults.map((r) => ({
+          fileName: r.fileName,
+          documentId: r.documentId,
+          similarity: r.similarity,
+        })),
       },
     });
 
@@ -80,7 +89,6 @@ export class ChatService {
       })),
     };
   }
-
   async createConversation(
     workspaceId: string,
     userId: string,
@@ -122,17 +130,20 @@ export class ChatService {
     return conversation;
   }
 
-  async listConversations(workspaceId: string, userId: string) {
-    return this.prisma.conversation.findMany({
-      where: {
-        workspaceId,
-        userId,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+  async listConversations(workspaceId: string, page = 1, limit = 20) {
+    const [conversations, total] = await Promise.all([
+      this.prisma.conversation.findMany({
+        where: { workspaceId },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        skip: (page - 1) * limit,
+      }),
+      this.prisma.conversation.count({ where: { workspaceId } }),
+    ]);
+
+    return { items: conversations, total, page, limit };
   }
+  
   async updateConversation(
     workspaceId: string,
     userId: string,

@@ -40,4 +40,25 @@ export class EmbeddingService {
       throw error;
     }
   }
+  async embedBatch(texts: string[], retries = 3): Promise<number[][]> {
+    try {
+      const response = await this.client.models.embedContent({
+        model: 'gemini-embedding-001',
+        contents: texts,
+        config: { outputDimensionality: 1536 },
+      });
+
+      const embeddings = response.embeddings?.map((e) => e.values);
+      if (!embeddings || embeddings.some((e) => !e)) {
+        throw new Error("Gemini, ba'zi embedding'larni qaytarmadi");
+      }
+      return embeddings as number[][];
+    } catch (error: any) {
+      if (error.status === 429 && retries > 0) {
+        await new Promise((r) => setTimeout(r, 5000));
+        return this.embedBatch(texts, retries - 1);
+      }
+      throw error;
+    }
+  }
 }
