@@ -3,7 +3,7 @@
  * Dark Academia: qattiq qora fon, amber active state.
  * Workspace switcher + nav items + user footer.
  */
-import React from "react";
+import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -12,12 +12,14 @@ import {
   Users,
   Settings,
   ChevronDown,
+  Plus,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { NAV_ITEMS } from "../../lib/constants";
 import { useWorkspace } from "../../store/workspaceContext";
 import { Avatar } from "../ui/Avatar";
 import { useAuth } from "../../store/AuthContext";
+import CreateWorkspaceModal from "./CreateWorkspaceModal";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   LayoutDashboard,
@@ -31,10 +33,10 @@ export const Sidebar: React.FC = () => {
   const location = useLocation();
   const { activeWorkspace, workspaces, setActiveWorkspace } = useWorkspace();
   const { user } = useAuth();
+  const [showCreateModal, setShowCreateModal] = useState(false); 
 
   return (
     <aside className="flex h-full w-60 flex-col border-r border-zinc-800/60 bg-zinc-950/60">
-      {/* Workspace switcher */}
       <div className="border-b border-zinc-800/60 p-3">
         <div className="flex items-center gap-2.5 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2">
           <div className="flex h-7 w-7 items-center justify-center rounded-md bg-amber-500/15 text-amber-400">
@@ -70,6 +72,12 @@ export const Sidebar: React.FC = () => {
             <ChevronDown className="h-4 w-4 text-zinc-600" />
           )}
         </div>
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-zinc-800 px-3 py-1.5 text-xs text-zinc-500 hover:border-amber-500/40 hover:text-amber-400"
+        >
+          <Plus className="h-3.5 w-3.5" /> Yangi workspace
+        </button>
       </div>
 
       {/* Navigation */}
@@ -111,6 +119,9 @@ export const Sidebar: React.FC = () => {
           </div>
         </div>
       </div>
+      {showCreateModal && (
+        <CreateWorkspaceModal onClose={() => setShowCreateModal(false)} />
+      )}
     </aside>
   );
 };

@@ -50,7 +50,7 @@ export const Chat: React.FC = () => {
     navigate(ROUTES.CHAT);
   };
 
-  const sortedConvs = [...(conversations ?? [])].sort((a, b) =>
+  const sortedConvs = [...(conversations?.items ?? [])].sort((a, b) =>
     b.createdAt.localeCompare(a.createdAt)
   );
 

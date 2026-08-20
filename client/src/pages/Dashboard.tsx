@@ -69,8 +69,9 @@ export const Dashboard: React.FC = () => {
   const recentDocs = [...docs].sort((a, b) =>
     b.createdAt.localeCompare(a.createdAt)
   ).slice(0, 4);
-  const recentConvs = [...(conversations ?? [])].slice(0, 4);
 
+  const convsList = conversations?.items ?? [];   // ← o'zgardi
+  const recentConvs = [...convsList].slice(0, 4);   // ← o'zgardi
   return (
     <div className="space-y-6 p-6">
       <div>
@@ -111,7 +112,7 @@ export const Dashboard: React.FC = () => {
         <StatCard
           icon={<MessageSquare className="h-5 w-5" />}
           label="Suhbatlar"
-          value={conversations?.length ?? 0}
+          value={conversations?.total ?? 0}
         />
         <StatCard
           icon={<Users className="h-5 w-5" />}

@@ -14,6 +14,7 @@ interface WorkspaceContextValue {
   setActiveWorkspace: (ws: Workspace) => void;
   isLoading: boolean;
   refreshWorkspaces: () => Promise<void>;
+  createWorkspace: (name: string, slug: string) => Promise<Workspace>;   // ← bu qator bormi?
 }
 
 const WorkspaceContext = createContext<WorkspaceContextValue | null>(null);
@@ -23,7 +24,16 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [activeWorkspace, setActiveWorkspace] = useState<Workspace | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-
+  
+  interface WorkspaceContextValue {
+    workspaces: Workspace[];
+    activeWorkspace: Workspace | null;
+    setActiveWorkspace: (ws: Workspace) => void;
+    isLoading: boolean;
+    refreshWorkspaces: () => Promise<void>;
+    createWorkspace: (name: string, slug: string) => Promise<Workspace>;   // ← yangi
+  }
+  
   const loadWorkspaces = useCallback(async () => {
     if (!isAuthenticated) {
       setWorkspaces([]);
@@ -70,6 +80,14 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("active_workspace_id", ws.id);
   }, []);
 
+
+  const createWorkspace = useCallback(async (name: string, slug: string) => {
+    const newWorkspace = await workspaceApi.create({ name, slug });
+    await loadWorkspaces();
+    switchWorkspace(newWorkspace);
+    return newWorkspace;
+  }, [loadWorkspaces, switchWorkspace]);
+
   return (
     <WorkspaceContext.Provider
       value={{
@@ -78,6 +96,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         setActiveWorkspace: switchWorkspace,
         isLoading,
         refreshWorkspaces: loadWorkspaces,
+        createWorkspace,
       }}
     >
       {children}
