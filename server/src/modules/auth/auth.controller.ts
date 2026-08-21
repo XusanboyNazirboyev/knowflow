@@ -47,9 +47,7 @@ export class AuthController {
   }
 
   @Post('logout')
-  async logout(@Res({ passthrough: true }) res: Response) {
-    res.clearCookie('accessToken');
-    res.clearCookie('refreshToken');
-    return { message: 'Muvaffaqiyatli chiqildi' };
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    return this.service.logout(req, res);
   }
 }

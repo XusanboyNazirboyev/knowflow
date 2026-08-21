@@ -4,7 +4,6 @@ import { WorkspacesService } from './workspaces.service';
 import { CreateWorkspaceDto } from './dto/create-workspace.dto';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { TenantGuard } from '@/common/guards/tenat.guard';
-import { WorkspaceRole } from '@prisma/client';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { InviteMemberDto } from './dto/invite-member.dto';
@@ -110,7 +109,6 @@ export class WorkspacesController {
     return await this.workspacesService.update(id, dto);
   }
 
-  // workspaces.controller.ts fayliga qo'shing:
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, TenantGuard, RolesGuard)
