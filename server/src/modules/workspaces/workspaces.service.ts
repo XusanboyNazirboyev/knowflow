@@ -7,6 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { WorkspaceRole } from '@prisma/client';
+import { UpdateWorkspaceDto } from './dto/update-workspace.dto';
 
 @Injectable()
 export class WorkspacesService {
@@ -94,11 +95,15 @@ export class WorkspacesService {
     if (existing) {
       throw new ConflictException('Bu foydalanuvchi azo bolgan');
     }
-    const existingInvitation = await this.prisma.workspaceInvitation.findUnique({
-      where: { workspaceId_email: { workspaceId, email: normalizedEmail } },
-    });
+    const existingInvitation = await this.prisma.workspaceInvitation.findUnique(
+      {
+        where: { workspaceId_email: { workspaceId, email: normalizedEmail } },
+      },
+    );
     if (existingInvitation?.status === 'PENDING') {
-      throw new ConflictException('Bu foydalanuvchiga taklif allaqachon yuborilgan');
+      throw new ConflictException(
+        'Bu foydalanuvchiga taklif allaqachon yuborilgan',
+      );
     }
     const invitation = await this.prisma.workspaceInvitation.upsert({
       where: { workspaceId_email: { workspaceId, email: normalizedEmail } },
@@ -128,7 +133,10 @@ export class WorkspacesService {
     });
   }
 
-  async acceptInvitation(invitationId: string, user: { id: string; email: string }) {
+  async acceptInvitation(
+    invitationId: string,
+    user: { id: string; email: string },
+  ) {
     return this.prisma.$transaction(async (tx) => {
       const invitation = await tx.workspaceInvitation.findFirst({
         where: {
@@ -170,7 +178,11 @@ export class WorkspacesService {
 
   async declineInvitation(invitationId: string, email: string) {
     const invitation = await this.prisma.workspaceInvitation.updateMany({
-      where: { id: invitationId, email: email.toLowerCase(), status: 'PENDING' },
+      where: {
+        id: invitationId,
+        email: email.toLowerCase(),
+        status: 'PENDING',
+      },
       data: { status: 'DECLINED', respondedAt: new Date() },
     });
     if (!invitation.count) throw new NotFoundException('Faol taklif topilmadi');
@@ -219,7 +231,9 @@ export class WorkspacesService {
         );
       }
     }
-    const removed = await this.prisma.workspaceMember.delete({ where: { id: memberId } });
+    const removed = await this.prisma.workspaceMember.delete({
+      where: { id: memberId },
+    });
     await this.prisma.applicationNotification.create({
       data: {
         userId: removed.userId,
@@ -228,5 +242,42 @@ export class WorkspacesService {
       },
     });
     return removed;
+  }
+  async update(workspaceId: string, dto: UpdateWorkspaceDto) {
+    const workspace = await this.prisma.workspace.findUnique({
+      where: { id: workspaceId },
+    });
+
+    if (!workspace) {
+      throw new NotFoundException('Workspace not found');
+    }
+
+    try {
+      return await this.prisma.workspace.update({
+        where: { id: workspaceId },
+        data: {
+          ...(dto.name !== undefined && { name: dto.name }),
+          ...(dto.slug !== undefined && { slug: dto.slug }),
+        },
+      });
+    } catch (error) {
+      // Agar slug unique bo'lsa, Prisma unique constraint errorini
+      // ConflictExceptionga aylantirish kerak.
+      throw error;
+    }
+  }
+
+  async deleteWorkspace(workspaceId: string) {
+    const workspace = await this.prisma.workspace.findUnique({
+      where: { id: workspaceId },
+    });
+
+    if (!workspace) {
+      throw new NotFoundException('Workspace topilmadi');
+    }
+
+    return await this.prisma.workspace.delete({
+      where: { id: workspaceId },
+    });
   }
 }

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Get, Param, Delete, Patch } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Get, Param, Delete, Patch, UsePipes, ValidationPipe } from '@nestjs/common';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { WorkspacesService } from './workspaces.service';
 import { CreateWorkspaceDto } from './dto/create-workspace.dto';
@@ -8,6 +8,7 @@ import { WorkspaceRole } from '@prisma/client';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { InviteMemberDto } from './dto/invite-member.dto';
+import { UpdateWorkspaceDto } from './dto/update-workspace.dto';
 @Controller('workspaces')
 @UseGuards(JwtAuthGuard)
 export class WorkspacesController {
@@ -100,5 +101,21 @@ export class WorkspacesController {
   @Roles('OWNER', 'ADMIN')
   removeMember(@Param('id') id: string, @Param('memberId') memberId: string) {
     return this.workspacesService.removeMember(id, memberId);
+  }
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard, TenantGuard, RolesGuard)
+  @Roles('OWNER', 'ADMIN')
+  @UsePipes(new ValidationPipe({ disableErrorMessages: false }))
+  async update(@Param('id') id: string, @Body() dto: UpdateWorkspaceDto) {
+    return await this.workspacesService.update(id, dto);
+  }
+
+  // workspaces.controller.ts fayliga qo'shing:
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, TenantGuard, RolesGuard)
+  @Roles('OWNER') // Faqat OWNER workspace'ni o'chira olishi uchun
+  async deleteWorkspace(@Param('id') id: string) {
+    return await this.workspacesService.deleteWorkspace(id);
   }
 }

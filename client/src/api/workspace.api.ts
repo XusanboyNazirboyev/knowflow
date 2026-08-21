@@ -27,11 +27,29 @@ export const workspaceApi = {
         return await apiClient.post<Workspace>("/workspaces", payload);
     },
 
+    // workspaceContext.tsx
     async update(
         id: string,
-        payload: UpdateWorkspacePayload,
+        payload: UpdateWorkspacePayload & { slug?: string },
     ): Promise<Workspace> {
-        return await apiClient.put<Workspace>(`/workspaces/${id}`, payload);
+        const cleanPayload: Record<string, any> = {};
+
+        if (payload.name?.trim()) {
+            cleanPayload.name = payload.name.trim();
+        }
+
+        if (payload.slug?.trim()) {
+            cleanPayload.slug = payload.slug
+                .toLowerCase()
+                .trim()
+                .replace(/\s+/g, "-")
+                .replace(/[^a-z0-9-]/g, "");
+        }
+
+        return await apiClient.patch<Workspace>(
+            `/workspaces/${id}`,
+            cleanPayload,
+        );
     },
 
     async delete(id: string): Promise<void> {
@@ -54,11 +72,17 @@ export const workspaceApi = {
     },
 
     async acceptInvitation(invitationId: string): Promise<void> {
-        await apiClient.post(`/workspaces/invitations/${invitationId}/accept`, {});
+        await apiClient.post(
+            `/workspaces/invitations/${invitationId}/accept`,
+            {},
+        );
     },
 
     async declineInvitation(invitationId: string): Promise<void> {
-        await apiClient.post(`/workspaces/invitations/${invitationId}/decline`, {});
+        await apiClient.post(
+            `/workspaces/invitations/${invitationId}/decline`,
+            {},
+        );
     },
 
     async listNotifications(): Promise<Notification[]> {
@@ -66,6 +90,9 @@ export const workspaceApi = {
     },
 
     async markNotificationRead(notificationId: string): Promise<void> {
-        await apiClient.patch(`/workspaces/notifications/${notificationId}/read`, {});
+        await apiClient.patch(
+            `/workspaces/notifications/${notificationId}/read`,
+            {},
+        );
     },
 };
